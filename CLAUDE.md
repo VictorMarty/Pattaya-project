@@ -58,20 +58,68 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 <!-- END BEADS INTEGRATION -->
 
 
-## Build & Test
+## Project: Pattaya
 
-_Add your build and test commands here_
+Pattaya is a **multiplayer, turn-based mobile web game** — a "board / walking"
+tabletop-style game. A player creates a game (getting a shareable id), others
+join by that id, and play proceeds through turn actions (mechanically a state
+machine owned by the backend). See
+[`docs/architecture/overview.md`](docs/architecture/overview.md).
 
-```bash
-# Example:
-# npm install
-# npm test
+### Repository layout (monorepo)
+
+```
+.
+├── frontend/               # React + TypeScript — player-facing web client
+├── backend/                # Node + TypeScript  — authoritative game server
+├── docs/                   # Architecture & descriptive docs (not code)
+│   ├── architecture/       #   overview + ADRs (decision records)
+│   ├── development/        #   how to work in this repo
+│   └── game-design/        #   game design document (GDD)
+├── index.html              # Current GitHub Pages entry (placeholder hello-world)
+├── .beads/                 # Task tracker data (beads) — see below
+├── .github/workflows/      # CI: GitHub Pages deploy
+└── .claude/                # Claude Code settings + SessionStart hook
 ```
 
-## Architecture Overview
+Keep the split clean: **code lives in `frontend/` and `backend/`**; everything
+descriptive (architecture, rationale, design, schemas, drafts, process) lives in
+**`docs/`**.
 
-_Add a brief overview of your project architecture_
+### Stack (high level)
 
-## Conventions & Patterns
+- **Frontend** (`frontend/`): React + TypeScript. Create game → shareable id;
+  join by id; render board; take turn actions. Static build → GitHub Pages.
+- **Backend** (`backend/`): Node + TypeScript. Synchronize participants; store
+  and run the game logic (the authoritative state machine). Hosting TBD.
 
-_Add your project-specific conventions here_
+### Build, deploy & test
+
+- **Build:** not scaffolded yet — `frontend`/`backend` are placeholders. Tooling
+  (bundler, sync transport) is tracked in beads. Until then `index.html` is
+  served as-is.
+- **Deploy:** every push to `main` or the active feature branch triggers
+  `.github/workflows/pages.yml`, which publishes the repo root to GitHub Pages:
+  https://victormarty.github.io/Pattaya-project/ (will later serve the frontend
+  build).
+- **Tests / lint:** not set up yet (no code) — tracked by beads issues.
+
+### Task tracking sync (important for this repo)
+
+The beads integration block above describes Dolt-remote sync, which this repo
+does **not** use. Here the tracker is synced **through git as plain text**:
+
+- `.beads/issues.jsonl` is the single source of truth and **is committed**.
+- The binary Dolt DB (`.beads/embeddeddolt/`) is gitignored and rebuilt each
+  session from the JSONL by `.claude/hooks/session-start.sh`.
+- bd's git hooks (`core.hooksPath=.beads/hooks`) auto-export the JSONL into your
+  commits and re-import it after pull/checkout — so normal `git add/commit/push`
+  is all that's needed to persist tracker state. No `bd dolt push` required.
+
+### Working agreement
+
+- Track ALL work in beads (`bd ready` → `bd update <id> --claim` → `bd close`).
+- File a beads issue before starting non-trivial work; record decisions as ADRs
+  under `docs/architecture/decisions/`.
+- Develop on the designated feature branch; do not push to `main` without
+  explicit permission.
